@@ -81,4 +81,14 @@ contract FundMe {
         require(success, "transfer tx failed");
         fundersToAmount[msg.sender] = 0; // 退款后清零
     }
+
+    modifier windowClosed() { // 修改器
+        require(block.timestamp >= deploymentTimestamp + lockTime, "Window is not closed");
+        _;
+    }
+
+    modifier onlyOwner() {
+        require(msg.sender == owner, "This function can only called by owner");
+        _;
+    }
 }
