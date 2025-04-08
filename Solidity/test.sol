@@ -12,17 +12,31 @@ import {AggregatorV3Interface} from "@chainlink/contracts/src/v0.8/shared/interf
 contract FundMe {
     mapping (address => uint256) public fundersToAmount;
     
-    uint256 MINIMUM_VALUE = 1 * 10 ** 18; // 设置最小转账为1Ether
-    AggregatorV3Interface internal dataFeed;
+    uint256 constant MINIMUM_VALUE = 1 * 10 ** 18; // 设置最小转账为1Ether
+    uint256 constant TARGET = 1000 * 10 ** 18; // 最低提取目标值
+    AggregatorV3Interface internal dataFeed; // 预言机，当前环境用于知道资产的多少
+    address public owner; // 部署合约的人
+    uint256 deploymentTimestamp;
+    uint256 lockTime;
 
-    constructor() {
+    constructor(uint256 _lockTime) {
         // Sepolia测试网中ETH-USD的地址
         dataFeed = AggregatorV3Interface(0x694AA1769357215DE4FAC081bf1f309aDC325306);
+        // 创建owner
+        owner = msg.sender;
+        // 时间戳
+        deploymentTimestamp = block.timestamp;
+        lockTime = _lockTime;
+    }
 
+    function transferOwnership(address newOwner) public onlyOwner {
+        // 把owner权力给别人
+        owner = newOwner;
     }
     
     function fund() external payable {
-        require(msg.value >= MINIMUM_VALUE, "Send more ETH");
+        require(convertEthToUsd(msg.value) >= MINIMUM_VALUE, "Send more ETH");
+        require(block.timestamp < deploymentTimestamp + lockTime, "Window is closed");
         fundersToAmount[msg.sender] = msg.value;
     }
 
@@ -40,6 +54,31 @@ contract FundMe {
 
     function convertEthToUsd(uint256 ethAmount) internal view returns (uint256) {
         uint256 ethPrice = uint256(getChainlinkDataFeedLatestAnswer());
-        return ethAmount * ethPrice;
+        return ethAmount * ethPrice / (10 ** 8);
+    }
+
+    function getFund() external windowClosed onlyOwner {
+        require(convertEthToUsd(address(this).balance) >= TARGET, "Target is not reached");
+        // transfer: transfer ETH and revert if tx failed
+        // payable(msg.sender).transfer(address(this).balance);
+
+        // send: return bool whether the transfer succeed
+        // bool success = payable(msg.sender).send(address(this).balance);
+        // require(success, "tx failed");
+
+        // call: transfer ETH with data return value of function and bool whether the function succeed
+        bool success;
+        (success, ) = payable(msg.sender).call{value: address(this).balance}("");
+        require(success, "transfer tx failed");
+    }
+
+    function refund() external windowClosed {
+        require(convertEthToUsd(address(this).balance) < TARGET, "target is reaached");
+        require(fundersToAmount[msg.sender] != 0, "there is no fund for you");
+        // call: transfer ETH with data return value of function and bool whether the function succeed
+        bool success;
+        (success, ) = payable(msg.sender).call{value: fundersToAmount[msg.sender]}("");
+        require(success, "transfer tx failed");
+        fundersToAmount[msg.sender] = 0; // 退款后清零
     }
 }
