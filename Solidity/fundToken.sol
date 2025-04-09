@@ -26,15 +26,15 @@ contract fundToken { // 通证合约
         totalSupply += amountToMint; // 增加通证的总发行量
     }
 
-    // transfer: transfer通证
+    // transfer函数：用于将通证从调用者的地址转移到指定的接收地址
     function transfer(address payee, uint256 amount) public {
-        require(balances[msg.sender] >= amount, "You do not have enough balance to transfer");
-        balances[msg.sender] -= amount;
-        balances[payee] += amount;
+        require(balances[msg.sender] >= amount, "You do not have enough balance to transfer"); // 检查调用者的余额是否足够
+        balances[msg.sender] -= amount; // 减少调用者的通证余额
+        balances[payee] += amount; // 增加接收者的通证余额
     }
 
-    // balanceOf: 查看某一地址的的通证数量
+    // balanceOf函数：用于查看指定地址的通证数量
     function balanceOf(address addr) public view returns (uint256) {
-        return balances[addr];
+        return balances[addr]; // 返回指定地址的通证余额
     }
 }
