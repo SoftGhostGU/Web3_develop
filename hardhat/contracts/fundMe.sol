@@ -14,14 +14,14 @@ contract FundMe {
     
     uint256 constant MINIMUM_VALUE = 1 * 10 ** 18; // 设置最小转账为1Ether
     uint256 constant TARGET = 1000 * 10 ** 18; // 最低提取目标值
-    AggregatorV3Interface internal dataFeed; // 预言机，当前环境用于知道资产的多少
+    AggregatorV3Interface public dataFeed; // 预言机，当前环境用于知道资产的多少
     address public owner; // 部署合约的人
     uint256 deploymentTimestamp;
     uint256 lockTime;
 
-    constructor(uint256 _lockTime) {
+    constructor(uint256 _lockTime, address dataFeedAddr) {
         // Sepolia测试网中ETH-USD的地址
-        dataFeed = AggregatorV3Interface(0x694AA1769357215DE4FAC081bf1f309aDC325306);
+        dataFeed = AggregatorV3Interface(dataFeedAddr);
         // 创建owner
         owner = msg.sender;
         // 时间戳
