@@ -15,7 +15,11 @@ npm初始化: npm init
 使用env-enc: 
 - 添加密码: npx env-enc set-pw
 - 设置元素: npx env-enc set(然后输入变量名和值)
+合约部署: npm install -D hardhat-deploy 
 
+## 测试代码
+写完test文件夹下的测试文件以后
+使用npx hardhat test命令运行测试
 
 ## 查看npx指令
 npx hardhat help
